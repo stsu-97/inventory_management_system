@@ -8,7 +8,6 @@ export default function ProductManagement() {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [activeTab, setActiveTab] = useState('manual'); // 'manual', 'excel'
   const [previewData, setPreviewData] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,7 +47,6 @@ export default function ProductManagement() {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      // Skip header row and process data
       const parsedData = [];
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i];
@@ -101,7 +99,6 @@ export default function ProductManagement() {
     const updated = [...previewData];
     updated[index][field] = value;
     
-    // Recompute error
     if (field === 'category') {
       updated[index].error = !value ? 'Category required' : '';
     }
@@ -190,10 +187,9 @@ export default function ProductManagement() {
         </div>
       )}
 
-      {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
               <h3 className="text-lg font-bold text-gray-900">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -205,146 +201,109 @@ export default function ProductManagement() {
                 <X size={24} />
               </button>
             </div>
-
-            {/* Tab Navigation - Only show for new products, not editing */}
-            {!editingProduct && (
-              <div className="border-b border-gray-200 bg-white">
-                <nav className="flex -mb-px">
-                  <button
-                    onClick={() => setActiveTab('manual')}
-                    className={`px-6 py-4 text-sm font-medium border-b-2 ${
-                      activeTab === 'manual'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Manual Entry
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('excel')}
-                    className={`px-6 py-4 text-sm font-medium border-b-2 ${
-                      activeTab === 'excel'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileSpreadsheet size={16} />
-                      Excel Upload
-                    </span>
-                  </button>
-                </nav>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter product name"
+                />
               </div>
-            )}
-
-            {/* Tab Content */}
-            <div className="flex-1 overflow-auto p-6">
-              {/* Manual Entry Tab */}
-              {(activeTab === 'manual' || editingProduct) && (
-                <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter product name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <select
-                      required
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select category</option>
-                      <option value="Electronics">Electronics</option>
-                      <option value="Office Supplies">Office Supplies</option>
-                      <option value="Furniture">Furniture</option>
-                      <option value="Accessories">Accessories</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Initial Stock Quantity</label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      value={formData.initial_stock}
-                      onChange={(e) => setFormData({ ...formData, initial_stock: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter initial stock"
-                    />
-                  </div>
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Save size={18} />
-                      {editingProduct ? 'Update' : 'Save'}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Excel Upload Tab */}
-              {activeTab === 'excel' && !editingProduct && (
-                <div className="max-w-2xl mx-auto">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls"
-                      onChange={handleExcelUpload}
-                      className="hidden"
-                      id="excel-upload"
-                      disabled={excelLoading}
-                    />
-                    <label
-                      htmlFor="excel-upload"
-                      className="cursor-pointer inline-flex flex-col items-center gap-4"
-                    >
-                      <FileSpreadsheet size={64} className="text-gray-400" />
-                      <div className="text-center">
-                        <span className="text-gray-600 font-medium text-lg block">
-                          {excelLoading ? 'Processing Excel file...' : 'Click to upload Excel file'}
-                        </span>
-                        <span className="text-sm text-gray-400">.xlsx or .xls files only</span>
-                      </div>
-                    </label>
-                  </div>
-
-                  <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-3">Excel Format Requirements:</h4>
-                    <p className="text-sm text-blue-800 mb-2">Columns should be in order:</p>
-                    <ol className="text-sm text-blue-800 list-decimal list-inside space-y-1">
-                      <li>Product Name</li>
-                      <li>Category</li>
-                      <li>Initial Stock (optional, defaults to 0)</li>
-                    </ol>
-                    <p className="text-sm text-blue-800 mt-3">
-                      <strong>Valid Categories:</strong> Electronics, Office Supplies, Furniture, Accessories
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  required
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select category</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Office Supplies">Office Supplies</option>
+                  <option value="Furniture">Furniture</option>
+                  <option value="Accessories">Accessories</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Initial Stock Quantity</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={formData.initial_stock}
+                  onChange={(e) => setFormData({ ...formData, initial_stock: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter initial stock"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+                  disabled={loading}
+                >
+                  <Save size={18} />
+                  {editingProduct ? 'Update' : 'Save'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Preview Table */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <FileSpreadsheet size={20} />
+          Excel Upload
+        </h3>
+        
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleExcelUpload}
+            className="hidden"
+            id="excel-upload"
+            disabled={excelLoading}
+          />
+          <label
+            htmlFor="excel-upload"
+            className="cursor-pointer inline-flex flex-col items-center gap-2"
+          >
+            <FileSpreadsheet size={48} className="text-gray-400" />
+            <span className="text-gray-600 font-medium">
+              {excelLoading ? 'Processing...' : 'Click to upload Excel file'}
+            </span>
+            <span className="text-sm text-gray-400">.xlsx or .xls files only</span>
+          </label>
+        </div>
+
+        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-semibold text-blue-900 mb-2">Excel Format Requirements:</h4>
+          <p className="text-sm text-blue-800">Columns should be in order:</p>
+          <ol className="text-sm text-blue-800 list-decimal list-inside mt-2 space-y-1">
+            <li>Product Name</li>
+            <li>Category</li>
+            <li>Initial Stock (optional, defaults to 0)</li>
+          </ol>
+          <p className="text-sm text-blue-800 mt-3">
+            <strong>Valid Categories:</strong> Electronics, Office Supplies, Furniture, Accessories
+          </p>
+        </div>
+      </div>
+
       {showPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -448,7 +407,6 @@ export default function ProductManagement() {
         </div>
       )}
 
-      {/* Products Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
