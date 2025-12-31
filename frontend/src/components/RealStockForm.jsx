@@ -182,7 +182,7 @@ export default function RealStockForm() {
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Save size={20} />
-          Add Stock Count
+          Manual Entry
         </button>
       </div>
 

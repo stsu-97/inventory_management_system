@@ -86,15 +86,15 @@ export default function StaffNoteForm() {
         if (row[0] && row[1] && row[2]) {
           const productName = row[1];
           const product = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
-          const type = (row[4] && row[4].toLowerCase() === 'purchase') ? 'purchase' : 'sale';
+          const type = (row[3] && row[3].toLowerCase() === 'purchase') ? 'purchase' : 'sale';
           
           parsedData.push({
             date: formatExcelDate(row[0]) || new Date().toISOString().split('T')[0],
             product_id: product ? product.id : '',
             product_name: productName,
-            type: type,
             quantity: parseInt(row[2]) || 0,
-            buyer_name: row[3] || '',
+            type: type,
+            buyer_name: row[4] || '',
             error: !product ? 'Product not found' : ''
           });
         }
