@@ -18,7 +18,8 @@ export default function StaffNoteForm() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     product_id: '',
-    quantity_sold: '',
+    type: 'sale',
+    quantity: '',
     buyer_name: ''
   });
 
@@ -85,12 +86,14 @@ export default function StaffNoteForm() {
         if (row[0] && row[1] && row[2]) {
           const productName = row[1];
           const product = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
+          const type = (row[4] && row[4].toLowerCase() === 'purchase') ? 'purchase' : 'sale';
           
           parsedData.push({
             date: formatExcelDate(row[0]) || new Date().toISOString().split('T')[0],
             product_id: product ? product.id : '',
             product_name: productName,
-            quantity_sold: parseInt(row[2]) || 0,
+            type: type,
+            quantity: parseInt(row[2]) || 0,
             buyer_name: row[3] || '',
             error: !product ? 'Product not found' : ''
           });
@@ -158,11 +161,13 @@ export default function StaffNoteForm() {
       const productMatch = line.match(/product[:\s]+([^\n]+)/i);
       const qtyMatch = line.match(/(?:qty|quantity)[:\s]+(\d+)/i);
       const buyerMatch = line.match(/(?:buyer|customer)[:\s]+([^\n]+)/i);
+      const typeMatch = line.match(/(?:type)[:\s]+(purchase|sale)/i);
       
       if (productMatch || qtyMatch) {
         const productName = productMatch ? productMatch[1].trim() : '';
         const quantity = qtyMatch ? parseInt(qtyMatch[1]) : 0;
         const buyerName = buyerMatch ? buyerMatch[1].trim() : '';
+        const type = typeMatch ? typeMatch[1].toLowerCase() : 'sale';
         
         const product = productName ? 
           products.find(p => p.name.toLowerCase().includes(productName.toLowerCase())) : null;
@@ -172,7 +177,8 @@ export default function StaffNoteForm() {
             date: new Date().toISOString().split('T')[0],
             product_id: product ? product.id : '',
             product_name: productName || 'Unknown',
-            quantity_sold: quantity,
+            type: type,
+            quantity: quantity,
             buyer_name: buyerName || '',
             error: !product && productName ? 'Product not found' : ''
           });
@@ -186,6 +192,7 @@ export default function StaffNoteForm() {
         if (parts.length >= 2) {
           const quantity = parseInt(parts[0]) || 0;
           const productName = parts[1] || '';
+          const type = parts[3] && parts[3].toLowerCase() === 'purchase' ? 'purchase' : 'sale';
           
           const product = productName ? 
             products.find(p => p.name.toLowerCase().includes(productName.toLowerCase())) : null;
@@ -195,7 +202,8 @@ export default function StaffNoteForm() {
               date: new Date().toISOString().split('T')[0],
               product_id: product ? product.id : '',
               product_name: productName || 'Unknown',
-              quantity_sold: quantity,
+              type: type,
+              quantity: quantity,
               buyer_name: parts[2] || '',
               error: !product && productName ? 'Product not found' : ''
             });
@@ -255,7 +263,8 @@ export default function StaffNoteForm() {
     setFormData({
       date: new Date().toISOString().split('T')[0],
       product_id: '',
-      quantity_sold: '',
+      type: 'sale',
+      quantity: '',
       buyer_name: ''
     });
     setShowForm(false);
@@ -306,6 +315,18 @@ export default function StaffNoteForm() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <select
+                  required
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="sale">Sale</option>
+                  <option value="purchase">Purchase</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
                 <select
                   required
@@ -320,13 +341,13 @@ export default function StaffNoteForm() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Sold</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                 <input
                   type="number"
                   required
                   min="1"
-                  value={formData.quantity_sold}
-                  onChange={(e) => setFormData({ ...formData, quantity_sold: e.target.value })}
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -395,8 +416,9 @@ export default function StaffNoteForm() {
           <ol className="text-sm text-blue-800 list-decimal list-inside mt-2 space-y-1">
             <li>Date (YYYY-MM-DD)</li>
             <li>Product Name</li>
-            <li>Quantity Sold</li>
+            <li>Quantity</li>
             <li>Buyer Name (optional)</li>
+            <li>Type (optional - "purchase" or "sale", defaults to "sale")</li>
           </ol>
         </div>
       </div>
@@ -465,7 +487,8 @@ export default function StaffNoteForm() {
                     <tr>
                       <th className="px-4 py-2 text-left font-medium text-gray-500">Date</th>
                       <th className="px-4 py-2 text-left font-medium text-gray-500">Product</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-500">Quantity Sold</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-500">Type</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-500">Quantity</th>
                       <th className="px-4 py-2 text-left font-medium text-gray-500">Buyer</th>
                       <th className="px-4 py-2 text-left font-medium text-gray-500">Actions</th>
                     </tr>
@@ -497,11 +520,21 @@ export default function StaffNoteForm() {
                           )}
                         </td>
                         <td className="px-4 py-2">
+                          <select
+                            value={row.type}
+                            onChange={(e) => handlePreviewEdit(index, 'type', e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm w-28"
+                          >
+                            <option value="sale">Sale</option>
+                            <option value="purchase">Purchase</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2">
                           <input
                             type="number"
                             min="1"
-                            value={row.quantity_sold}
-                            onChange={(e) => handlePreviewEdit(index, 'quantity_sold', parseInt(e.target.value) || 0)}
+                            value={row.quantity}
+                            onChange={(e) => handlePreviewEdit(index, 'quantity', parseInt(e.target.value) || 0)}
                             className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
                           />
                         </td>
@@ -561,7 +594,8 @@ export default function StaffNoteForm() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity Sold</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
               </tr>
             </thead>
@@ -574,8 +608,21 @@ export default function StaffNoteForm() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {note.product_name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
-                    -{note.quantity_sold}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                      note.type === 'purchase' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {note.type === 'purchase' ? 'Purchase' : 'Sale'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
+                    {note.type === 'purchase' ? (
+                      <span className="text-green-600">+{note.quantity}</span>
+                    ) : (
+                      <span className="text-red-600">-{note.quantity}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {note.buyer_name || '-'}

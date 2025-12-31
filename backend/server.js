@@ -82,7 +82,8 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT NOT NULL,
       product_id INTEGER NOT NULL,
-      quantity_sold INTEGER NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('purchase', 'sale')),
+      quantity INTEGER NOT NULL,
       buyer_name TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (product_id) REFERENCES products(id)
@@ -239,8 +240,8 @@ function insertSampleData() {
         { date: '2024-12-29', product_id: 5, quantity_sold: 10, buyer_name: 'Customer X' }
       ];
 
-      const noteStmt = db.prepare('INSERT INTO staff_notes (date, product_id, quantity_sold, buyer_name) VALUES (?, ?, ?, ?)');
-      staffNotes.forEach(n => noteStmt.run(n.date, n.product_id, n.quantity_sold, n.buyer_name));
+      const noteStmt = db.prepare('INSERT INTO staff_notes (date, product_id, type, quantity, buyer_name) VALUES (?, ?, ?, ?, ?)');
+      staffNotes.forEach(n => noteStmt.run(n.date, n.product_id, 'sale', n.quantity_sold, n.buyer_name));
       noteStmt.finalize();
 
       // Insert sample stock counts (25+ records across both warehouses, recent dates)
@@ -512,16 +513,16 @@ app.get('/api/staff-notes', (req, res) => {
 });
 
 app.post('/api/staff-notes', (req, res) => {
-  const { date, product_id, quantity_sold, buyer_name } = req.body;
+  const { date, product_id, type, quantity, buyer_name } = req.body;
   db.run(
-    'INSERT INTO staff_notes (date, product_id, quantity_sold, buyer_name) VALUES (?, ?, ?, ?)',
-    [date, product_id, quantity_sold, buyer_name],
+    'INSERT INTO staff_notes (date, product_id, type, quantity, buyer_name) VALUES (?, ?, ?, ?, ?)',
+    [date, product_id, type, quantity, buyer_name],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ id: this.lastID, date, product_id, quantity_sold, buyer_name });
+      res.json({ id: this.lastID, date, product_id, type, quantity, buyer_name });
     }
   );
 });
@@ -533,8 +534,8 @@ app.post('/api/staff-notes/batch', (req, res) => {
 
   notes.forEach(note => {
     db.run(
-      'INSERT INTO staff_notes (date, product_id, quantity_sold, buyer_name) VALUES (?, ?, ?, ?)',
-      [note.date, note.product_id, note.quantity_sold, note.buyer_name],
+      'INSERT INTO staff_notes (date, product_id, type, quantity, buyer_name) VALUES (?, ?, ?, ?, ?)',
+      [note.date, note.product_id, note.type, note.quantity, note.buyer_name],
       function(err) {
         if (err) {
           results.push({ ...note, error: err.message });
@@ -693,13 +694,22 @@ app.get('/api/dashboard/analytics', (req, res) => {
             const invoiceStock = purchases - sales;
 
             // Calculate stock from staff notes
-            db.get(
-              `SELECT SUM(quantity_sold) as total FROM staff_notes 
+            db.all(
+              `SELECT type, SUM(quantity) as total FROM staff_notes 
                WHERE product_id = ${product.id} 
-               AND date >= '${startDate}' AND date <= '${endDate}'`,
+               AND date >= '${startDate}' AND date <= '${endDate}' 
+               GROUP BY type`,
               [],
-              (err, staffRow) => {
-                const staffStock = staffRow ? staffRow.total || 0 : 0;
+              (err, staffRows) => {
+                let staffPurchases = 0;
+                let staffSales = 0;
+                if (staffRows) {
+                  staffRows.forEach(row => {
+                    if (row.type === 'purchase') staffPurchases = row.total || 0;
+                    if (row.type === 'sale') staffSales = row.total || 0;
+                  });
+                }
+                const staffStock = staffPurchases - staffSales;
 
                 // Get latest stock counts for each warehouse
                 db.all(
@@ -776,7 +786,7 @@ app.get('/api/products/:id/history', (req, res) => {
     
     UNION ALL
     
-    SELECT 'staff_note' as type, date, 'sale' as transaction_type, quantity_sold as quantity, buyer_name, NULL as warehouse, created_at 
+    SELECT 'staff_note' as type, date, type as transaction_type, quantity, buyer_name, NULL as warehouse, created_at 
     FROM staff_notes 
     WHERE product_id = ? AND date >= ? AND date <= ?
     
