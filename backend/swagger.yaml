@@ -1,0 +1,718 @@
+openapi: 3.0.0
+info:
+  title: Inventory Management System API
+  description: A comprehensive inventory management system with products, invoices, staff notes, and stock counts
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+servers:
+  - url: http://localhost:5002
+    description: Development server
+
+tags:
+  - name: Products
+    description: Product catalog management
+  - name: Invoices
+    description: Invoice and transaction management
+  - name: Staff Notes
+    description: Staff daily sales and purchase notes
+  - name: Stock Counts
+    description: Real-time inventory counts per warehouse
+  - name: Dashboard
+    description: Monthly analytics and discrepancy tracking
+
+paths:
+  /products:
+    get:
+      summary: Get all products
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      summary: Create a new product
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    /batch:
+      post:
+        summary: Bulk import products from Excel
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Products imported successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+    /{id}:
+      put:
+        summary: Update a product
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    /{id}:
+      delete:
+        summary: Delete a product
+        tags:
+        - Products
+      responses:
+        '200':
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /invoices:
+    get:
+      summary: Get all invoices with filtering
+      tags:
+        - Invoices
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Filter invoices from this date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Filter invoices to this date
+        - name: product_id
+          in: query
+          schema:
+            type: integer
+            description: Filter invoices by product ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invoice'
+    post:
+      summary: Create a new invoice
+      tags:
+        - Invoices
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceInput'
+      responses:
+        '201':
+          description: Invoice created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+    /batch:
+      post:
+        summary: Bulk import invoices from Excel
+      tags:
+        - Invoices
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvoiceInput'
+      responses:
+        '200':
+          description: Invoices imported successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+
+  /staff-notes:
+    get:
+      summary: Get all staff notes with filtering
+      tags:
+        - Staff Notes
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Filter notes from this date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Filter notes to this date
+        - name: product_id
+          in: query
+          schema:
+            type: integer
+            description: Filter notes by product ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffNote'
+    post:
+      summary: Create a new staff note
+      tags:
+        - Staff Notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                $ref: '#/components/schemas/StaffNoteInput'
+      responses:
+        '201':
+          description: Staff note created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffNote'
+    /batch:
+      post:
+        summary: Bulk import staff notes from Excel
+      tags:
+        - Staff Notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffNoteInput'
+      responses:
+        '200':
+          description: Staff notes imported successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+
+  /stock-counts:
+    get:
+      summary: Get all stock counts with filtering
+      tags:
+        - Stock Counts
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Filter counts from this date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Filter counts to this date
+        - name: product_id
+          in: query
+          schema:
+            type: integer
+            description: Filter counts by product ID
+        - name: warehouse
+          in: query
+          schema:
+            type: string
+            enum: [Warehouse 1, Warehouse 2]
+            description: Filter counts by warehouse
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockCount'
+    post:
+      summary: Create a new stock count
+      tags:
+        - Stock Counts
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                $ref: '#/components/schemas/StockCountInput'
+      responses:
+        '201':
+          description: Stock count created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockCount'
+    /batch:
+      post:
+        summary: Bulk import stock counts from Excel
+      tags:
+        - Stock Counts
+      requestBody:
+        required: true
+        content:
+          application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockCountInput'
+      responses:
+        '200':
+          description: Stock counts imported successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+
+  /dashboard/analytics:
+    get:
+      summary: Get monthly analytics data
+      tags:
+        - Dashboard
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            description: Month number (1-12)
+        - name: year
+          in: query
+          schema:
+            type: integer
+            minimum: 2024
+            maximum: 2030
+            description: Year number
+      responses:
+        '200':
+          description: Monthly analytics for each product
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    product_id:
+                      type: integer
+                    product_name:
+                      type: string
+                    invoice_stock:
+                      type: integer
+                    staff_stock:
+                      type: integer
+                    warehouse1_stock:
+                      type: integer
+                    warehouse2_stock:
+                      type: integer
+                    total_real_stock:
+                      type: integer
+                    discrepancy_invoice:
+                      type: integer
+                    discrepancy_staff:
+                      type: integer
+                    discrepancy_invoice_pct:
+                      type: number
+                      format: float
+                    discrepancy_staff_pct:
+                      type: number
+                      format: float
+
+  /products/{id}/history:
+    get:
+      summary: Get product history
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Product ID
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Start date for history
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: End date for history
+      responses:
+        '200':
+          description: Product transaction history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [invoice, staff_note, stock_count]
+                    date:
+                      type: string
+                      format: date
+                    transaction_type:
+                      type: string
+                      description: For invoices: 'purchase' or 'sale', for others: 'count'
+                    quantity:
+                      type: integer
+                    buyer_name:
+                      type: string
+                      nullable: true
+                    warehouse:
+                      type: string
+                      nullable: true
+                    created_at:
+                      type: string
+                      format: date-time
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Laptop Dell XPS 15
+        category:
+          type: string
+          enum: [Electronics, Office Supplies, Furniture, Accessories]
+          example: Electronics
+        initial_stock:
+          type: integer
+          example: 45
+        created_at:
+          type: string
+          format: date-time
+          example: 2024-10-01T10:00:00Z
+
+    ProductInput:
+      type: object
+      required:
+        - name
+        - category
+      properties:
+        name:
+          type: string
+          example: Gaming Headset 7.1
+        category:
+          type: string
+          example: Electronics
+        initial_stock:
+          type: integer
+          example: 60
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        date:
+          type: string
+          format: date
+          example: 2024-10-15
+        product_id:
+          type: integer
+          example: 1
+        product_name:
+          type: string
+          example: Laptop Dell XPS 15
+        quantity:
+          type: integer
+          example: 10
+        type:
+          type: string
+          enum: [purchase, sale]
+          example: purchase
+        buyer_name:
+          type: string
+          example: Tech Corp
+        created_at:
+          type: string
+          format: date-time
+          example: 2024-10-15T14:30:00Z
+
+    InvoiceInput:
+      type: object
+      required:
+        - date
+        - product_id
+        - quantity
+        - type
+      properties:
+        date:
+          type: string
+          format: date
+          example: 2024-10-15
+        product_id:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 50
+        type:
+          type: string
+          enum: [purchase, sale]
+          default: purchase
+        buyer_name:
+          type: string
+          example: ABC Corp
+
+    StaffNote:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        date:
+          type: string
+          format: date
+          example: 2024-10-01
+        product_id:
+          type: integer
+          example: 1
+        product_name:
+          type: string
+          example: Laptop Dell XPS 15
+        type:
+          type: string
+          enum: [purchase, sale]
+          example: sale
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        buyer_name:
+          type: string
+          example: John Doe
+        created_at:
+          type: string
+          format: date-time
+          example: 2024-10-01T10:00:00Z
+
+    StaffNoteInput:
+      type: object
+      required:
+        - date
+        - product_id
+        - quantity
+      properties:
+        date:
+          type: string
+          format: date
+          example: 2024-10-01
+        product_id:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 5
+        type:
+          type: string
+          enum: [purchase, sale]
+          default: sale
+        buyer_name:
+          type: string
+          example: Walk-in
+
+    StockCount:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        date:
+          type: string
+          format: date
+          example: 2024-10-31
+        product_id:
+          type: integer
+          example: 1
+        product_name:
+          type: string
+          example: Laptop Dell XPS 15
+        quantity:
+          type: integer
+          minimum: 0
+          example: 150
+        warehouse:
+          type: string
+          enum: [Warehouse 1, Warehouse 2]
+          example: Warehouse 1
+        created_at:
+          type: string
+          format: date-time
+          example: 2024-10-31T23:59:59Z
+
+    StockCountInput:
+      type: object
+      required:
+        - date
+        - product_id
+        - quantity
+        - warehouse
+      properties:
+        date:
+          type: string
+          format: date
+          example: 2024-10-31
+        product_id:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          minimum: 0
+          example: 150
+        warehouse:
+          type: string
+          enum: [Warehouse 1, Warehouse 2]
+          example: Warehouse 2
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Product not found
+        error:
+          type: string
+          example: Error message details
+
+    BatchResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Wireless Mouse Logitech
+        success:
+          type: boolean
+          example: true
+        error:
+          type: string
+          example: null
+
+    BatchResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/BatchResult'

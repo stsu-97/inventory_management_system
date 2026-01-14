@@ -808,6 +808,13 @@ app.get('/api/products/:id/history', (req, res) => {
   });
 });
 
+// Swagger documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.yaml');
+
+app.use('/api-docs', swaggerUi.serve, swaggerDocument);
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
 });
